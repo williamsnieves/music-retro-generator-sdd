@@ -105,6 +105,18 @@ openspec archive <change>
 
 ---
 
+## Patron de implementacion por tarea (multi agentes)
+
+Este patron se repite para cada implementacion derivada de specs y se ejecuta siempre con el framework:
+
+1. **Crear nueva rama** para la tarea.
+2. **Ejecutar la tarea** indicada en `tasks.md` usando OpenSpec (slash o CLI).
+3. **Commit y push** cuando la tarea este completa.
+4. **Generar PR description** y esperar confirmacion de merge.
+5. **Repetir** desde el paso 1 para la siguiente tarea hasta completar la implementacion.
+
+---
+
 ## Notas importantes
 
 - Los slash commands solo funcionan despues de reiniciar el IDE.
