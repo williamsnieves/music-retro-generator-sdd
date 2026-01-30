@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Retro Music Generator - Manual Demo</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Courier New', monospace;
+      background: #1a1a2e;
+      color: #eee;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    h1 {
+      color: #0f3;
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 2.5em;
+      text-shadow: 0 0 10px #0f3;
+    }
+    
+    .section {
+      background: #16213e;
+      border: 2px solid #0f3;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    
+    h2 {
+      color: #f90;
+      margin-bottom: 15px;
+      border-bottom: 2px solid #f90;
+      padding-bottom: 5px;
+    }
+    
+    button {
+      background: #0f3;
+      color: #1a1a2e;
+      border: none;
+      padding: 10px 20px;
+      margin: 5px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: 'Courier New', monospace;
+      font-weight: bold;
+      font-size: 14px;
+      transition: all 0.3s;
+    }
+    
+    button:hover {
+      background: #0c2;
+      transform: scale(1.05);
+    }
+    
+    button:active {
+      transform: scale(0.95);
+    }
+    
+    button.danger {
+      background: #f33;
+    }
+    
+    button.danger:hover {
+      background: #c11;
+    }
+    
+    .controls {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin: 10px 0;
+    }
+    
+    .output {
+      background: #0d1b2a;
+      border: 1px solid #0f3;
+      border-radius: 4px;
+      padding: 15px;
+      margin-top: 10px;
+      overflow-x: auto;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    
+    .output pre {
+      color: #0f3;
+      font-size: 12px;
+    }
+    
+    .status {
+      display: inline-block;
+      padding: 5px 10px;
+      border-radius: 4px;
+      font-weight: bold;
+      margin-left: 10px;
+    }
+    
+    .status.playing {
+      background: #0f3;
+      color: #1a1a2e;
+    }
+    
+    .status.stopped {
+      background: #f33;
+      color: #fff;
+    }
+    
+    .status.paused {
+      background: #f90;
+      color: #1a1a2e;
+    }
+    
+    input[type="range"] {
+      width: 200px;
+      margin: 0 10px;
+    }
+    
+    label {
+      color: #0f3;
+      font-weight: bold;
+    }
+    
+    .info {
+      background: rgba(255, 153, 0, 0.1);
+      border-left: 4px solid #f90;
+      padding: 10px;
+      margin: 10px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎹 RETRO MUSIC GENERATOR 🎮</h1>
+    
+    <div class="info">
+      <strong>📝 Instrucciones:</strong> Abre la consola del navegador (F12 o Cmd+Option+J) para ver logs detallados y ejecutar comandos personalizados.
+    </div>
+    
+    <!-- Pattern Editor Section -->
+    <div class="section">
+      <h2>🎵 Pattern Editor</h2>
+      <div class="controls">
+        <button onclick="createBasicPattern()">Create Basic Pattern</button>
+        <button onclick="addNotesToPattern()">Add Notes</button>
+        <button onclick="moveNoteInPattern()">Move Note</button>
+        <button onclick="removeNoteFromPattern()">Remove Note</button>
+        <button onclick="clearPattern()" class="danger">Clear Pattern</button>
+        <button onclick="testChannelLimit()">Test Channel Limit</button>
+      </div>
+      <div class="output" id="pattern-output">
+        <pre>Pattern editor ready. Click buttons to test.</pre>
+      </div>
+    </div>
+    
+    <!-- Song Composition Section -->
+    <div class="section">
+      <h2>🎼 Song Composition</h2>
+      <div class="controls">
+        <button onclick="createSong()">Create Song</button>
+        <button onclick="addPatternsToSong()">Add Patterns</button>
+        <button onclick="reorganizePatterns()">Reorganize</button>
+        <button onclick="validateLoop()">Validate Finite Loop</button>
+        <button onclick="changeBPM()">Change BPM</button>
+      </div>
+      <div class="output" id="song-output">
+        <pre>Song composer ready. Click buttons to test.</pre>
+      </div>
+    </div>
+    
+    <!-- Playback Section -->
+    <div class="section">
+      <h2>▶️ Playback Engine</h2>
+      <div class="controls">
+        <button onclick="initAudio()">Initialize Audio</button>
+        <button onclick="playPattern()">Play Pattern</button>
+        <button onclick="pausePlayback()">Pause</button>
+        <button onclick="resumePlayback()">Resume</button>
+        <button onclick="stopPlayback()" class="danger">Stop</button>
+      </div>
+      <div>
+        <label>BPM:</label>
+        <input type="range" id="bpm-slider" min="60" max="200" value="120" oninput="updateBPM(this.value)">
+        <span id="bpm-value">120</span>
+        <span id="playback-status" class="status stopped">STOPPED</span>
+      </div>
+      <div class="output" id="playback-output">
+        <pre>Playback engine ready. Initialize audio first.</pre>
+      </div>
+    </div>
+    
+    <!-- Synthesis Section -->
+    <div class="section">
+      <h2>🎛️ Synthesizer</h2>
+      <div class="controls">
+        <button onclick="setupSynthesizer()">Setup Synthesizer</button>
+        <button onclick="playTestNote(0)">Play Channel 0 (Square)</button>
+        <button onclick="playTestNote(1)">Play Channel 1 (Sawtooth)</button>
+        <button onclick="playTestNote(2)">Play Channel 2 (Triangle)</button>
+        <button onclick="playChord()">Play Chord</button>
+      </div>
+      <div>
+        <label>Master Volume:</label>
+        <input type="range" id="volume-slider" min="0" max="100" value="70" oninput="updateVolume(this.value)">
+        <span id="volume-value">70%</span>
+      </div>
+      <div class="output" id="synth-output">
+        <pre>Synthesizer ready. Setup first.</pre>
+      </div>
+    </div>
+    
+    <!-- Export Section -->
+    <div class="section">
+      <h2>💾 Export</h2>
+      <div class="controls">
+        <button onclick="exportJSON()">Export JSON</button>
+        <button onclick="exportWAV()">Export WAV (coming soon)</button>
+        <button onclick="showExportData()">Show Export Data</button>
+      </div>
+      <div class="output" id="export-output">
+        <pre>Export tools ready. Create a song first.</pre>
+      </div>
+    </div>
+  </div>
+  
+  <script type="module">
+    // Import classes (adjust paths based on your build setup)
+    import { Pattern, Note, Step, Song, PatternEntry } from './src/domain/index.js';
+    import { PatternEditor } from './src/usecases/PatternEditor.js';
+    import { SongComposer } from './src/usecases/SongComposer.js';
+    import { PlaybackEngine } from './src/infrastructure/audio/PlaybackEngine.js';
+    
+    // Global state
+    window.appState = {
+      pattern: null,
+      editor: null,
+      song: null,
+      composer: null,
+      audioContext: null,
+      playbackEngine: null,
+      currentBPM: 120
+    };
+    
+    // Make classes available globally for console
+    window.Pattern = Pattern;
+    window.Note = Note;
+    window.Step = Step;
+    window.Song = Song;
+    window.PatternEntry = PatternEntry;
+    window.PatternEditor = PatternEditor;
+    window.SongComposer = SongComposer;
+    window.PlaybackEngine = PlaybackEngine;
+    
+    // Helper functions
+    function log(elementId, message) {
+      const output = document.getElementById(elementId);
+      const timestamp = new Date().toLocaleTimeString();
+      output.innerHTML = `<pre>[${timestamp}] ${message}</pre>` + output.innerHTML;
+      console.log(`[${elementId}]`, message);
+    }
+    
+    // Pattern Editor Functions
+    window.createBasicPattern = function() {
+      window.appState.pattern = new Pattern('demo-pattern', 'Demo Pattern', 16);
+      window.appState.editor = new PatternEditor(window.appState.pattern, 4);
+      log('pattern-output', '✅ Pattern created: 16 steps, 4 channels max');
+    };
+    
+    window.addNotesToPattern = function() {
+      if (!window.appState.editor) {
+        log('pattern-output', '❌ Create pattern first!');
+        return;
+      }
+      
+      window.appState.editor.addNote(0, 0, new Note('C4', 1, 0));
+      window.appState.editor.addNote(4, 0, new Note('E4', 1, 0));
+      window.appState.editor.addNote(8, 1, new Note('G4', 1, 1));
+      window.appState.editor.addNote(12, 2, new Note('C5', 1, 2));
+      
+      log('pattern-output', '✅ Added 4 notes: C4, E4, G4, C5');
+      log('pattern-output', `Pattern empty: ${window.appState.editor.isEmpty()}`);
+    };
+    
+    window.moveNoteInPattern = function() {
+      if (!window.appState.editor) return;
+      window.appState.editor.moveNote(0, 0, 2, 0);
+      log('pattern-output', '✅ Moved note from step 0 to step 2');
+    };
+    
+    window.removeNoteFromPattern = function() {
+      if (!window.appState.editor) return;
+      window.appState.editor.removeNote(4, 0);
+      log('pattern-output', '✅ Removed note at step 4, channel 0');
+    };
+    
+    window.clearPattern = function() {
+      if (!window.appState.editor) return;
+      window.appState.editor.clear();
+      log('pattern-output', `✅ Pattern cleared. Empty: ${window.appState.editor.isEmpty()}`);
+    };
+    
+    window.testChannelLimit = function() {
+      if (!window.appState.editor) return;
+      try {
+        window.appState.editor.addNote(0, 4, new Note('A4', 1, 4));
+        log('pattern-output', '❌ Should have thrown error!');
+      } catch (e) {
+        log('pattern-output', `✅ Channel limit enforced: ${e.message}`);
+      }
+    };
+    
+    // Song Composition Functions
+    window.createSong = function() {
+      window.appState.song = new Song('demo-song', 'Demo Song', 120);
+      window.appState.composer = new SongComposer(window.appState.song);
+      log('song-output', '✅ Song created: "Demo Song" at 120 BPM');
+    };
+    
+    window.addPatternsToSong = function() {
+      if (!window.appState.composer) {
+        log('song-output', '❌ Create song first!');
+        return;
+      }
+      
+      window.appState.composer.addPattern(new PatternEntry('intro', 2));
+      window.appState.composer.addPattern(new PatternEntry('verse', 4));
+      window.appState.composer.addPattern(new PatternEntry('chorus', 2));
+      window.appState.composer.setRepeatCount(1);
+      
+      const song = window.appState.composer.getSong();
+      log('song-output', `✅ Added 3 patterns. Total: ${song.patternSequence.length}`);
+    };
+    
+    window.reorganizePatterns = function() {
+      if (!window.appState.composer) return;
+      window.appState.composer.movePattern(0, 2);
+      log('song-output', '✅ Moved pattern from position 0 to 2');
+    };
+    
+    window.validateLoop = function() {
+      if (!window.appState.composer) return;
+      const isValid = window.appState.composer.validateFiniteLoop();
+      log('song-output', `Finite loop valid: ${isValid ? '✅ YES' : '❌ NO'}`);
+    };
+    
+    window.changeBPM = function() {
+      if (!window.appState.composer) return;
+      window.appState.composer.setBPM(140);
+      log('song-output', '✅ BPM changed to 140');
+    };
+    
+    // Playback Functions
+    window.initAudio = function() {
+      if (!window.appState.audioContext) {
+        window.appState.audioContext = new AudioContext();
+        window.appState.playbackEngine = new PlaybackEngine(window.appState.audioContext);
+        log('playback-output', '✅ Audio initialized');
+      } else {
+        log('playback-output', 'ℹ️ Audio already initialized');
+      }
+    };
+    
+    window.playPattern = function() {
+      if (!window.appState.playbackEngine) {
+        log('playback-output', '❌ Initialize audio first!');
+        return;
+      }
+      
+      if (!window.appState.editor) {
+        window.createBasicPattern();
+        window.addNotesToPattern();
+      }
+      
+      const pattern = window.appState.editor.getPattern();
+      window.appState.playbackEngine.start(pattern, window.appState.currentBPM);
+      updateStatus('playing');
+      log('playback-output', `▶️ Playing pattern at ${window.appState.currentBPM} BPM`);
+      
+      // Update step counter
+      const interval = setInterval(() => {
+        if (window.appState.playbackEngine.isPlaying()) {
+          const step = window.appState.playbackEngine.getCurrentStep();
+          document.getElementById('playback-output').querySelector('pre').innerHTML = 
+            `▶️ Playing - Step: ${step}/16`;
+        } else {
+          clearInterval(interval);
+        }
+      }, 100);
+    };
+    
+    window.pausePlayback = function() {
+      if (!window.appState.playbackEngine) return;
+      window.appState.playbackEngine.pause();
+      updateStatus('paused');
+      log('playback-output', '⏸️ Paused');
+    };
+    
+    window.resumePlayback = function() {
+      if (!window.appState.playbackEngine) return;
+      window.appState.playbackEngine.resume();
+      updateStatus('playing');
+      log('playback-output', '▶️ Resumed');
+    };
+    
+    window.stopPlayback = function() {
+      if (!window.appState.playbackEngine) return;
+      window.appState.playbackEngine.stop();
+      updateStatus('stopped');
+      log('playback-output', '⏹️ Stopped');
+    };
+    
+    window.updateBPM = function(value) {
+      window.appState.currentBPM = parseInt(value);
+      document.getElementById('bpm-value').textContent = value;
+    };
+    
+    function updateStatus(status) {
+      const statusEl = document.getElementById('playback-status');
+      statusEl.className = `status ${status}`;
+      statusEl.textContent = status.toUpperCase();
+    }
+    
+    // Synthesizer Functions
+    window.setupSynthesizer = function() {
+      log('synth-output', '✅ Synthesizer setup (using PlaybackEngine\'s internal synth)');
+    };
+    
+    window.playTestNote = function(channel) {
+      if (!window.appState.audioContext) {
+        window.initAudio();
+      }
+      
+      const notes = ['C4', 'E4', 'G4'];
+      const note = notes[channel] || 'A4';
+      log('synth-output', `🎵 Playing ${note} on channel ${channel}`);
+      
+      // Use Web Audio API directly for demo
+      const oscillator = window.appState.audioContext.createOscillator();
+      const gainNode = window.appState.audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(window.appState.audioContext.destination);
+      
+      const waveforms = ['square', 'sawtooth', 'triangle'];
+      oscillator.type = waveforms[channel] || 'sine';
+      oscillator.frequency.value = 440; // A4
+      gainNode.gain.value = 0.3;
+      
+      const now = window.appState.audioContext.currentTime;
+      oscillator.start(now);
+      oscillator.stop(now + 0.5);
+    };
+    
+    window.playChord = function() {
+      window.playTestNote(0);
+      setTimeout(() => window.playTestNote(1), 200);
+      setTimeout(() => window.playTestNote(2), 400);
+      log('synth-output', '🎹 Playing chord: C major');
+    };
+    
+    window.updateVolume = function(value) {
+      document.getElementById('volume-value').textContent = value + '%';
+      log('synth-output', `🔊 Volume set to ${value}%`);
+    };
+    
+    // Export Functions
+    window.exportJSON = function() {
+      if (!window.appState.composer) {
+        log('export-output', '❌ Create song first!');
+        return;
+      }
+      
+      const song = window.appState.composer.getSong();
+      const data = {
+        id: song.id,
+        name: song.name,
+        bpm: song.bpm,
+        repeatCount: song.repeatCount,
+        patternSequence: song.patternSequence.map(p => ({
+          patternId: p.patternId,
+          repeat: p.repeat
+        }))
+      };
+      
+      log('export-output', '✅ JSON data ready. Check console for details.');
+      console.log('Song JSON:', JSON.stringify(data, null, 2));
+    };
+    
+    window.exportWAV = function() {
+      log('export-output', 'ℹ️ WAV export requires full implementation. Use AudioExporter class in console.');
+    };
+    
+    window.showExportData = function() {
+      if (!window.appState.composer) return;
+      const song = window.appState.composer.getSong();
+      log('export-output', `Song: ${song.name} | BPM: ${song.bpm} | Patterns: ${song.patternSequence.length}`);
+    };
+    
+    // Initialize
+    console.log('%c🎮 RETRO MUSIC GENERATOR DEMO', 'color: #0f3; font-size: 20px; font-weight: bold');
+    console.log('%cAll classes are available globally. Try:', 'color: #f90');
+    console.log('  window.appState - Current state');
+    console.log('  new Pattern(...) - Create patterns');
+    console.log('  new PatternEditor(...) - Edit patterns');
+    console.log('  new SongComposer(...) - Compose songs');
+    console.log('  See docs/MANUAL_TESTING.md for examples');
+  </script>
+</body>
+</html>

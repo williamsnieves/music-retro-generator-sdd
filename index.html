@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Retro Music Generator - Manual Testing</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Courier New', monospace;
+      background: linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%);
+      color: #eee;
+      padding: 20px;
+      min-height: 100vh;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    
+    h1 {
+      color: #00ff88;
+      font-size: 3em;
+      text-shadow: 0 0 20px #00ff88, 0 0 40px #00ff88;
+      margin-bottom: 10px;
+      animation: glow 2s ease-in-out infinite alternate;
+    }
+    
+    @keyframes glow {
+      from { text-shadow: 0 0 10px #00ff88, 0 0 20px #00ff88; }
+      to { text-shadow: 0 0 20px #00ff88, 0 0 40px #00ff88, 0 0 60px #00ff88; }
+    }
+    
+    .subtitle {
+      color: #ff9500;
+      font-size: 1.2em;
+    }
+    
+    .section {
+      background: rgba(22, 33, 62, 0.9);
+      border: 2px solid #00ff88;
+      border-radius: 12px;
+      padding: 25px;
+      margin-bottom: 25px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 32px rgba(0, 255, 136, 0.1);
+    }
+    
+    h2 {
+      color: #ff9500;
+      margin-bottom: 20px;
+      font-size: 1.8em;
+      border-bottom: 3px solid #ff9500;
+      padding-bottom: 10px;
+    }
+    
+    .button-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      margin: 15px 0;
+    }
+    
+    button {
+      background: linear-gradient(135deg, #00ff88 0%, #00cc6f 100%);
+      color: #1a1a2e;
+      border: none;
+      padding: 14px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: 'Courier New', monospace;
+      font-weight: bold;
+      font-size: 14px;
+      transition: all 0.3s;
+      box-shadow: 0 4px 15px rgba(0, 255, 136, 0.3);
+    }
+    
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0, 255, 136, 0.5);
+    }
+    
+    button:active {
+      transform: translateY(0);
+    }
+    
+    button.danger {
+      background: linear-gradient(135deg, #ff3366 0%, #cc1144 100%);
+      color: #fff;
+      box-shadow: 0 4px 15px rgba(255, 51, 102, 0.3);
+    }
+    
+    button.danger:hover {
+      box-shadow: 0 6px 20px rgba(255, 51, 102, 0.5);
+    }
+    
+    button.secondary {
+      background: linear-gradient(135deg, #ff9500 0%, #cc7700 100%);
+    }
+    
+    .output {
+      background: #0d1b2a;
+      border: 2px solid #00ff88;
+      border-radius: 8px;
+      padding: 20px;
+      margin-top: 15px;
+      overflow-x: auto;
+      max-height: 400px;
+      overflow-y: auto;
+      box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.5);
+    }
+    
+    .output pre {
+      color: #00ff88;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    
+    .status-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 15px;
+      background: rgba(13, 27, 42, 0.8);
+      border-radius: 8px;
+      margin: 15px 0;
+    }
+    
+    .status {
+      display: inline-flex;
+      align-items: center;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-weight: bold;
+      font-size: 14px;
+    }
+    
+    .status.playing {
+      background: #00ff88;
+      color: #1a1a2e;
+      animation: pulse 1s ease-in-out infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+    
+    .status.stopped {
+      background: #ff3366;
+      color: #fff;
+    }
+    
+    .status.paused {
+      background: #ff9500;
+      color: #1a1a2e;
+    }
+    
+    .slider-control {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    input[type="range"] {
+      width: 200px;
+      height: 6px;
+      border-radius: 5px;
+      background: #0d1b2a;
+      outline: none;
+      -webkit-appearance: none;
+    }
+    
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #00ff88;
+      cursor: pointer;
+      box-shadow: 0 0 10px #00ff88;
+    }
+    
+    input[type="range"]::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #00ff88;
+      cursor: pointer;
+      box-shadow: 0 0 10px #00ff88;
+    }
+    
+    label {
+      color: #00ff88;
+      font-weight: bold;
+      min-width: 80px;
+    }
+    
+    .value-display {
+      color: #ff9500;
+      font-weight: bold;
+      min-width: 60px;
+      text-align: center;
+    }
+    
+    .info-box {
+      background: rgba(255, 149, 0, 0.1);
+      border-left: 4px solid #ff9500;
+      padding: 15px;
+      margin: 15px 0;
+      border-radius: 4px;
+    }
+    
+    .info-box strong {
+      color: #ff9500;
+    }
+    
+    .console-hint {
+      text-align: center;
+      padding: 20px;
+      background: rgba(0, 255, 136, 0.05);
+      border: 2px dashed #00ff88;
+      border-radius: 8px;
+      margin-top: 30px;
+    }
+    
+    .console-hint code {
+      background: #0d1b2a;
+      padding: 2px 8px;
+      border-radius: 4px;
+      color: #00ff88;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🎹 RETRO MUSIC GENERATOR</h1>
+      <div class="subtitle">Manual Testing Interface</div>
+    </header>
+    
+    <div class="info-box">
+      <strong>📝 Quick Start:</strong> Press F12 (or Cmd+Option+J on Mac) to open the browser console for detailed logs and custom commands. All classes are available globally!
+    </div>
+    
+    <!-- Pattern Editor Section -->
+    <div class="section">
+      <h2>🎵 Pattern Editor</h2>
+      <div class="button-grid">
+        <button onclick="demo.createPattern()">Create Pattern</button>
+        <button onclick="demo.addNotes()">Add Notes</button>
+        <button onclick="demo.moveNote()">Move Note</button>
+        <button onclick="demo.removeNote()">Remove Note</button>
+        <button class="danger" onclick="demo.clearPattern()">Clear Pattern</button>
+        <button class="secondary" onclick="demo.testChannelLimit()">Test Channel Limit</button>
+      </div>
+      <div class="output" id="pattern-output">
+        <pre>🎵 Pattern Editor ready. Click "Create Pattern" to start.</pre>
+      </div>
+    </div>
+    
+    <!-- Song Composition Section -->
+    <div class="section">
+      <h2>🎼 Song Composition</h2>
+      <div class="button-grid">
+        <button onclick="demo.createSong()">Create Song</button>
+        <button onclick="demo.addPatterns()">Add Patterns</button>
+        <button onclick="demo.reorganize()">Reorganize</button>
+        <button class="secondary" onclick="demo.validateLoop()">Validate Loop</button>
+        <button onclick="demo.changeBPM()">Change BPM</button>
+      </div>
+      <div class="output" id="song-output">
+        <pre>🎼 Song Composer ready. Click "Create Song" to start.</pre>
+      </div>
+    </div>
+    
+    <!-- Playback Section -->
+    <div class="section">
+      <h2>▶️ Real-time Playback</h2>
+      <div class="button-grid">
+        <button onclick="demo.initAudio()">Initialize Audio</button>
+        <button onclick="demo.play()">▶️ Play</button>
+        <button class="secondary" onclick="demo.pause()">⏸️ Pause</button>
+        <button class="secondary" onclick="demo.resume()">▶️ Resume</button>
+        <button class="danger" onclick="demo.stop()">⏹️ Stop</button>
+      </div>
+      
+      <div class="status-bar">
+        <div class="slider-control">
+          <label>BPM:</label>
+          <input type="range" id="bpm-slider" min="60" max="200" value="120" 
+                 oninput="demo.updateBPM(this.value)">
+          <span class="value-display" id="bpm-value">120</span>
+        </div>
+        <div id="playback-status" class="status stopped">⏹️ STOPPED</div>
+      </div>
+      
+      <div class="output" id="playback-output">
+        <pre>🎮 Playback Engine ready. Initialize audio first (allow audio in browser).</pre>
+      </div>
+    </div>
+    
+    <!-- Console Hint -->
+    <div class="console-hint">
+      <p><strong>💻 Advanced Testing:</strong> Open the console and try:</p>
+      <p style="margin-top: 10px;">
+        <code>demo.state</code> - View current state<br>
+        <code>new Pattern('id', 'name', 16)</code> - Create custom patterns<br>
+        <code>See docs/MANUAL_TESTING.md for full API examples</code>
+      </p>
+    </div>
+  </div>
+  
+  <script type="module">
+    import { Pattern, Note, Step, Song, PatternEntry } from './src/domain/index.js';
+    import { PatternEditor } from './src/usecases/PatternEditor.js';
+    import { SongComposer } from './src/usecases/SongComposer.js';
+    import { PlaybackEngine } from './src/infrastructure/audio/PlaybackEngine.js';
+    
+    // Global demo state
+    const state = {
+      pattern: null,
+      editor: null,
+      song: null,
+      composer: null,
+      audioContext: null,
+      playbackEngine: null,
+      currentBPM: 120,
+      stepInterval: null
+    };
+    
+    // Expose classes globally
+    window.Pattern = Pattern;
+    window.Note = Note;
+    window.Step = Step;
+    window.Song = Song;
+    window.PatternEntry = PatternEntry;
+    window.PatternEditor = PatternEditor;
+    window.SongComposer = SongComposer;
+    window.PlaybackEngine = PlaybackEngine;
+    
+    // Utility functions
+    function log(elementId, message, type = 'info') {
+      const output = document.getElementById(elementId);
+      const timestamp = new Date().toLocaleTimeString();
+      const icon = type === 'error' ? '❌' : type === 'success' ? '✅' : 'ℹ️';
+      const newLine = `<span style="color: ${type === 'error' ? '#ff3366' : '#00ff88'}">[${timestamp}] ${icon} ${message}</span>\n`;
+      output.querySelector('pre').innerHTML = newLine + output.querySelector('pre').innerHTML;
+      console.log(`[${elementId}]`, message);
+    }
+    
+    function updateStatus(status) {
+      const statusEl = document.getElementById('playback-status');
+      const icons = { playing: '▶️', paused: '⏸️', stopped: '⏹️' };
+      statusEl.className = `status ${status}`;
+      statusEl.textContent = `${icons[status]} ${status.toUpperCase()}`;
+    }
+    
+    // Demo functions
+    window.demo = {
+      state,
+      
+      // Pattern Editor
+      createPattern() {
+        state.pattern = new Pattern('demo-pattern', 'Demo Pattern', 16);
+        state.editor = new PatternEditor(state.pattern, 4);
+        log('pattern-output', 'Pattern created: 16 steps, 4 channels max', 'success');
+      },
+      
+      addNotes() {
+        if (!state.editor) {
+          log('pattern-output', 'Create pattern first!', 'error');
+          return;
+        }
+        
+        state.editor.addNote(0, 0, new Note('C4', 1, 0));
+        state.editor.addNote(4, 0, new Note('E4', 1, 0));
+        state.editor.addNote(8, 1, new Note('G4', 1, 1));
+        state.editor.addNote(12, 2, new Note('C5', 1, 2));
+        
+        log('pattern-output', 'Added 4 notes: C4, E4, G4, C5', 'success');
+        log('pattern-output', `Pattern empty: ${state.editor.isEmpty()}`);
+      },
+      
+      moveNote() {
+        if (!state.editor) return;
+        state.editor.moveNote(0, 0, 2, 0);
+        log('pattern-output', 'Moved note from step 0 to step 2', 'success');
+      },
+      
+      removeNote() {
+        if (!state.editor) return;
+        state.editor.removeNote(4, 0);
+        log('pattern-output', 'Removed note at step 4, channel 0', 'success');
+      },
+      
+      clearPattern() {
+        if (!state.editor) return;
+        state.editor.clear();
+        log('pattern-output', `Pattern cleared. Empty: ${state.editor.isEmpty()}`, 'success');
+      },
+      
+      testChannelLimit() {
+        if (!state.editor) return;
+        try {
+          state.editor.addNote(0, 4, new Note('A4', 1, 4));
+          log('pattern-output', 'Should have thrown error!', 'error');
+        } catch (e) {
+          log('pattern-output', `Channel limit enforced: ${e.message}`, 'success');
+        }
+      },
+      
+      // Song Composition
+      createSong() {
+        state.song = new Song('demo-song', 'Demo Song', 120);
+        state.composer = new SongComposer(state.song);
+        log('song-output', 'Song created: "Demo Song" at 120 BPM', 'success');
+      },
+      
+      addPatterns() {
+        if (!state.composer) {
+          log('song-output', 'Create song first!', 'error');
+          return;
+        }
+        
+        state.composer.addPattern(new PatternEntry('intro', 2));
+        state.composer.addPattern(new PatternEntry('verse', 4));
+        state.composer.addPattern(new PatternEntry('chorus', 2));
+        state.composer.setRepeatCount(1);
+        
+        const song = state.composer.getSong();
+        log('song-output', `Added 3 patterns. Total: ${song.patternSequence.length}`, 'success');
+      },
+      
+      reorganize() {
+        if (!state.composer) return;
+        state.composer.movePattern(0, 2);
+        log('song-output', 'Moved pattern from position 0 to 2', 'success');
+      },
+      
+      validateLoop() {
+        if (!state.composer) return;
+        const isValid = state.composer.validateFiniteLoop();
+        log('song-output', `Finite loop valid: ${isValid ? 'YES ✅' : 'NO ❌'}`, isValid ? 'success' : 'error');
+      },
+      
+      changeBPM() {
+        if (!state.composer) return;
+        state.composer.setBPM(140);
+        log('song-output', 'BPM changed to 140', 'success');
+      },
+      
+      // Playback
+      initAudio() {
+        if (!state.audioContext) {
+          state.audioContext = new AudioContext();
+          state.playbackEngine = new PlaybackEngine(state.audioContext);
+          log('playback-output', 'Audio initialized successfully', 'success');
+        } else {
+          log('playback-output', 'Audio already initialized');
+        }
+      },
+      
+      play() {
+        if (!state.playbackEngine) {
+          log('playback-output', 'Initialize audio first!', 'error');
+          return;
+        }
+        
+        if (!state.editor) {
+          this.createPattern();
+          this.addNotes();
+        }
+        
+        const pattern = state.editor.getPattern();
+        state.playbackEngine.start(pattern, state.currentBPM);
+        updateStatus('playing');
+        log('playback-output', `Playing pattern at ${state.currentBPM} BPM`, 'success');
+        
+        // Update step counter
+        if (state.stepInterval) clearInterval(state.stepInterval);
+        state.stepInterval = setInterval(() => {
+          if (state.playbackEngine.isPlaying()) {
+            const step = state.playbackEngine.getCurrentStep();
+            const stepDuration = state.playbackEngine.getStepDuration();
+            document.getElementById('playback-output').querySelector('pre').innerHTML = 
+              `<span style="color: #00ff88">▶️ Playing - Step: ${step}/16 | Duration: ${stepDuration.toFixed(3)}s</span>`;
+          } else {
+            clearInterval(state.stepInterval);
+          }
+        }, 50);
+      },
+      
+      pause() {
+        if (!state.playbackEngine) return;
+        state.playbackEngine.pause();
+        updateStatus('paused');
+        log('playback-output', 'Playback paused', 'success');
+      },
+      
+      resume() {
+        if (!state.playbackEngine) return;
+        state.playbackEngine.resume();
+        updateStatus('playing');
+        log('playback-output', 'Playback resumed', 'success');
+      },
+      
+      stop() {
+        if (!state.playbackEngine) return;
+        state.playbackEngine.stop();
+        updateStatus('stopped');
+        if (state.stepInterval) clearInterval(state.stepInterval);
+        log('playback-output', 'Playback stopped', 'success');
+      },
+      
+      updateBPM(value) {
+        state.currentBPM = parseInt(value);
+        document.getElementById('bpm-value').textContent = value;
+      }
+    };
+    
+    // Initialize console
+    console.log('%c🎮 RETRO MUSIC GENERATOR - MANUAL TESTING', 'color: #00ff88; font-size: 24px; font-weight: bold; text-shadow: 0 0 10px #00ff88');
+    console.log('%c┌─────────────────────────────────────────┐', 'color: #00ff88');
+    console.log('%c│  All classes available globally!       │', 'color: #00ff88');
+    console.log('%c│  Try: demo.state, new Pattern(...)     │', 'color: #00ff88');
+    console.log('%c│  See: docs/MANUAL_TESTING.md           │', 'color: #00ff88');
+    console.log('%c└─────────────────────────────────────────┘', 'color: #00ff88');
+  </script>
+</body>
+</html>
