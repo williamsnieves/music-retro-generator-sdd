@@ -252,7 +252,13 @@
     </header>
     
     <div class="info-box">
-      <strong>📝 Quick Start:</strong> Press F12 (or Cmd+Option+J on Mac) to open the browser console for detailed logs and custom commands. All classes are available globally!
+      <strong>🎮 Quick Start:</strong>
+      <ol style="margin: 10px 0 0 20px; line-height: 1.8;">
+        <li>Click <strong>"Initialize Audio"</strong> in the Playback section (required first!)</li>
+        <li>Click <strong>"▶️ Play"</strong> to hear the demo pattern</li>
+        <li>Use <strong>BPM slider</strong> to adjust speed (60-200)</li>
+        <li>Press <strong>F12</strong> for console and advanced features</li>
+      </ol>
     </div>
     
     <!-- Pattern Editor Section -->
@@ -468,61 +474,129 @@
           state.audioContext = new AudioContext();
           state.playbackEngine = new PlaybackEngine(state.audioContext);
           log('playback-output', 'Audio initialized successfully', 'success');
+          log('playback-output', 'AudioContext state: ' + state.audioContext.state);
+          
+          // Resume context if suspended (browser autoplay policy)
+          if (state.audioContext.state === 'suspended') {
+            state.audioContext.resume().then(() => {
+              log('playback-output', 'AudioContext resumed', 'success');
+            });
+          }
         } else {
           log('playback-output', 'Audio already initialized');
         }
       },
       
       play() {
+        if (!state.audioContext) {
+          log('playback-output', 'Initialize audio first!', 'error');
+          this.initAudio();
+          return;
+        }
+        
+        // Resume context if needed
+        if (state.audioContext.state === 'suspended') {
+          state.audioContext.resume();
+        }
+        
         if (!state.playbackEngine) {
           log('playback-output', 'Initialize audio first!', 'error');
           return;
         }
         
+        // Auto-create pattern if needed
         if (!state.editor) {
           this.createPattern();
           this.addNotes();
+          log('playback-output', 'Auto-created demo pattern', 'success');
         }
         
-        const pattern = state.editor.getPattern();
-        state.playbackEngine.start(pattern, state.currentBPM);
-        updateStatus('playing');
-        log('playback-output', `Playing pattern at ${state.currentBPM} BPM`, 'success');
-        
-        // Update step counter
-        if (state.stepInterval) clearInterval(state.stepInterval);
-        state.stepInterval = setInterval(() => {
-          if (state.playbackEngine.isPlaying()) {
-            const step = state.playbackEngine.getCurrentStep();
-            const stepDuration = state.playbackEngine.getStepDuration();
-            document.getElementById('playback-output').querySelector('pre').innerHTML = 
-              `<span style="color: #00ff88">▶️ Playing - Step: ${step}/16 | Duration: ${stepDuration.toFixed(3)}s</span>`;
-          } else {
-            clearInterval(state.stepInterval);
-          }
-        }, 50);
+        try {
+          const pattern = state.editor.getPattern();
+          log('playback-output', `Starting playback at ${state.currentBPM} BPM...`, 'success');
+          
+          state.playbackEngine.start(pattern, state.currentBPM);
+          updateStatus('playing');
+          
+          log('playback-output', `✅ Playing! Step duration: ${state.playbackEngine.getStepDuration().toFixed(3)}s`, 'success');
+          
+          // Update step counter
+          if (state.stepInterval) clearInterval(state.stepInterval);
+          state.stepInterval = setInterval(() => {
+            if (state.playbackEngine && state.playbackEngine.isPlaying()) {
+              const step = state.playbackEngine.getCurrentStep();
+              const stepDuration = state.playbackEngine.getStepDuration();
+              document.getElementById('playback-output').querySelector('pre').innerHTML = 
+                `<span style="color: #00ff88">▶️ Playing - Step: ${step}/16 | Duration: ${stepDuration.toFixed(3)}s | BPM: ${state.currentBPM}</span>`;
+            } else {
+              if (state.stepInterval) {
+                clearInterval(state.stepInterval);
+                state.stepInterval = null;
+              }
+            }
+          }, 50);
+        } catch (error) {
+          log('playback-output', 'Error starting playback: ' + error.message, 'error');
+          console.error(error);
+        }
       },
       
       pause() {
-        if (!state.playbackEngine) return;
-        state.playbackEngine.pause();
-        updateStatus('paused');
-        log('playback-output', 'Playback paused', 'success');
+        if (!state.playbackEngine) {
+          log('playback-output', 'No playback to pause', 'error');
+          return;
+        }
+        
+        try {
+          state.playbackEngine.pause();
+          updateStatus('paused');
+          log('playback-output', '⏸️ Playback paused', 'success');
+        } catch (error) {
+          log('playback-output', 'Error pausing: ' + error.message, 'error');
+        }
       },
       
       resume() {
-        if (!state.playbackEngine) return;
-        state.playbackEngine.resume();
-        updateStatus('playing');
-        log('playback-output', 'Playback resumed', 'success');
+        if (!state.playbackEngine) {
+          log('playback-output', 'No playback to resume', 'error');
+          return;
+        }
+        
+        // Resume audio context if needed
+        if (state.audioContext && state.audioContext.state === 'suspended') {
+          state.audioContext.resume();
+        }
+        
+        try {
+          state.playbackEngine.resume();
+          updateStatus('playing');
+          log('playback-output', '▶️ Playback resumed', 'success');
+        } catch (error) {
+          log('playback-output', 'Error resuming: ' + error.message, 'error');
+        }
       },
       
       stop() {
-        if (!state.playbackEngine) return;
-        state.playbackEngine.stop();
-        updateStatus('stopped');
-        if (state.stepInterval) clearInterval(state.stepInterval);
-        log('playback-output', 'Playback stopped', 'success');
+        if (!state.playbackEngine) {
+          log('playback-output', 'No playback to stop', 'error');
+          return;
+        }
+        
+        try {
+          state.playbackEngine.stop();
+          updateStatus('stopped');
+          
+          if (state.stepInterval) {
+            clearInterval(state.stepInterval);
+            state.stepInterval = null;
+          }
+          
+          document.getElementById('playback-output').querySelector('pre').innerHTML = 
+            `<span style="color: #ff3366">⏹️ Stopped</span>`;
+          log('playback-output', '⏹️ Playback stopped', 'success');
+        } catch (error) {
+          log('playback-output', 'Error stopping: ' + error.message, 'error');
+        }
       },
       
       updateBPM(value) {

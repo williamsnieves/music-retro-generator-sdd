@@ -41,8 +41,15 @@ export class PlaybackEngine {
    * Start playback of a pattern at the specified BPM.
    */
   start(pattern: Pattern, bpm: number): void {
+    // Stop any existing playback first
     if (this.state === 'playing') {
-      return; // Already playing
+      this.stop();
+    }
+
+    // Clear any existing interval
+    if (this.scheduleInterval !== null) {
+      clearInterval(this.scheduleInterval);
+      this.scheduleInterval = null;
     }
 
     this.currentPattern = pattern;
@@ -60,8 +67,15 @@ export class PlaybackEngine {
    * Start playback of a song with pattern references.
    */
   startSong(song: Song, patterns: Pattern[]): void {
+    // Stop any existing playback first
     if (this.state === 'playing') {
-      return;
+      this.stop();
+    }
+
+    // Clear any existing interval
+    if (this.scheduleInterval !== null) {
+      clearInterval(this.scheduleInterval);
+      this.scheduleInterval = null;
     }
 
     this.currentSong = song;
@@ -225,7 +239,13 @@ export class PlaybackEngine {
     const currentTime = this.audioContext.currentTime;
     const scheduleUntil = currentTime + this.SCHEDULE_AHEAD_TIME;
 
-    while (this.getNextNoteTime() < scheduleUntil) {
+    // Prevent infinite loops with iteration limit
+    let iterations = 0;
+    const maxIterations = 100;
+
+    while (this.getNextNoteTime() < scheduleUntil && iterations < maxIterations) {
+      iterations++;
+      
       const noteTime = this.getNextNoteTime();
       
       // Get step and trigger notes
@@ -245,9 +265,13 @@ export class PlaybackEngine {
         
         if (this.currentSong) {
           this.handleSongAdvance();
+          if (this.state !== 'playing') {
+            break; // Song ended
+          }
         } else {
-          // Single pattern loops indefinitely until stopped
+          // Single pattern loops: update startTime for next loop
           this.currentLoop++;
+          this.startTime += this.currentPattern.stepCount * stepDuration;
         }
       }
     }
@@ -287,19 +311,45 @@ export class PlaybackEngine {
   private playNote(note: Note, startTime: number): void {
     // In a full implementation, this would delegate to the Synthesizer
     // For now, create a simple oscillator as proof of concept
-    const oscillator = this.audioContext.createOscillator();
-    const gainNode = this.audioContext.createGain();
+    try {
+      const oscillator = this.audioContext.createOscillator();
+      const gainNode = this.audioContext.createGain();
 
-    oscillator.connect(gainNode);
-    gainNode.connect(this.audioContext.destination);
+      oscillator.connect(gainNode);
+      gainNode.connect(this.audioContext.destination);
 
-    // Simple note frequency mapping (placeholder)
-    oscillator.frequency.value = this.noteToFrequency(note.pitch);
-    gainNode.gain.value = 0.1;
+      // Simple note frequency mapping (placeholder)
+      oscillator.frequency.value = this.noteToFrequency(note.pitch);
+      gainNode.gain.value = 0.1;
 
-    const duration = note.duration * this.getStepDuration();
-    oscillator.start(startTime);
-    oscillator.stop(startTime + duration);
+      const duration = note.duration * this.getStepDuration();
+      
+      // Add envelope for smoother sound
+      const now = this.audioContext.currentTime;
+      const attackTime = 0.01;
+      const releaseTime = 0.05;
+      
+      if (startTime >= now && gainNode.gain.setValueAtTime && gainNode.gain.linearRampToValueAtTime) {
+        gainNode.gain.setValueAtTime(0, startTime);
+        gainNode.gain.linearRampToValueAtTime(0.1, startTime + attackTime);
+        gainNode.gain.linearRampToValueAtTime(0, startTime + duration - releaseTime);
+      }
+
+      oscillator.start(startTime);
+      oscillator.stop(startTime + duration);
+
+      // Cleanup after note ends
+      oscillator.onended = () => {
+        try {
+          oscillator.disconnect();
+          gainNode.disconnect();
+        } catch (e) {
+          // Already disconnected
+        }
+      };
+    } catch (e) {
+      console.error('Error playing note:', e);
+    }
   }
 
   /**
